@@ -12,6 +12,7 @@ import Dashboard from "@/components/Dashboard";
 import NewsSection from "@/components/NewsSection";
 import EventsSection from "@/components/EventsSection";
 import MemberAccess from "@/components/MemberAccess";
+import DynamicSectionsRenderer from "@/components/DynamicSectionsRenderer";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import Footer from "@/components/Footer";
@@ -68,6 +69,7 @@ const Index = () => {
             <MemberAccess />
           )}
 
+          <DynamicSectionsRenderer />
           <Footer />
         </div>
       </main>

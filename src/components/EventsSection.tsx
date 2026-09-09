@@ -5,24 +5,15 @@ import { Check, Calendar } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { isPast, parse } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useEvents } from '@/hooks/useEvents';
+import type { Event as EventType } from '@/types/content';
 
-interface Event {
-  date: string;
-  name: string;
-  venue: string;
-  details: string;
+interface EventWithStatus extends EventType {
   isCompleted?: boolean;
 }
 
-const events: Event[] = [
-  { date: "Oct 26", name: "AI Hackathon Kickoff", venue: "Online", details: "The grand kickoff for our annual AI hackathon. Form teams and get ready to build!" },
-  { date: "Nov 12", name: "Workshop: Intro to PyTorch", venue: "Room 404, Tech Hall", details: "A hands-on workshop covering the fundamentals of PyTorch for building neural networks." },
-  { date: "Nov 28", name: "Guest Lecture: AI Ethics", venue: "Auditorium", details: "A talk from a leading industry expert on the ethical implications of modern AI." },
-  { date: "Dec 15", name: "Project Showcase & Mixer", venue: "Main Atrium", details: "Members showcase their semester projects, followed by a festive mixer." },
-];
-
 interface VerticalStepItemProps {
-  event: Event;
+  event: EventWithStatus;
   index: number;
   scrollYProgress: MotionValue<number>;
   progressPoint: number;
@@ -69,7 +60,7 @@ const VerticalStepItem = ({ event, index, scrollYProgress, progressPoint }: Vert
   );
 };
 
-const VerticalStepper = ({ eventsWithStatus }: { eventsWithStatus: Event[] }) => {
+const VerticalStepper = ({ eventsWithStatus }: { eventsWithStatus: EventWithStatus[] }) => {
     const targetRef = useRef(null);
     const { scrollYProgress } = useScroll({
       target: targetRef,
@@ -97,7 +88,7 @@ const VerticalStepper = ({ eventsWithStatus }: { eventsWithStatus: Event[] }) =>
         <div className="space-y-24">
           {eventsWithStatus.map((event, index) => (
             <VerticalStepItem
-              key={index}
+              key={event.id}
               event={event}
               index={index}
               scrollYProgress={scrollYProgress}
@@ -109,7 +100,7 @@ const VerticalStepper = ({ eventsWithStatus }: { eventsWithStatus: Event[] }) =>
     );
 };
 
-const HorizontalStepper = ({ eventsWithStatus }: { eventsWithStatus: Event[] }) => {
+const HorizontalStepper = ({ eventsWithStatus }: { eventsWithStatus: EventWithStatus[] }) => {
     const [activeStep, setActiveStep] = useState(0);
 
     const firstUpcomingIndex = useMemo(() => eventsWithStatus.findIndex(event => !event.isCompleted), [eventsWithStatus]);
@@ -159,7 +150,7 @@ const HorizontalStepper = ({ eventsWithStatus }: { eventsWithStatus: Event[] }) 
 
           <div className="flex justify-between relative">
             {eventsWithStatus.map((event, index) => (
-               <Popover key={index}>
+               <Popover key={event.id}>
                 <PopoverTrigger asChild>
                   <div 
                     className="flex flex-col items-center cursor-pointer group"
@@ -216,17 +207,50 @@ const HorizontalStepper = ({ eventsWithStatus }: { eventsWithStatus: Event[] }) 
 
 const EventsSection = () => {
     const isMobile = useIsMobile();
+    const { data: events, isLoading } = useEvents();
     
-    const eventsWithStatus = useMemo(() => {
+    const eventsWithStatus: EventWithStatus[] = useMemo(() => {
+        if (!events) return [];
         const currentYear = new Date().getFullYear();
         return events.map(event => {
-          const eventDate = parse(`${event.date} ${currentYear}`, 'MMM dd yyyy', new Date());
-          return {
-            ...event,
-            isCompleted: isPast(eventDate),
-          };
+          try {
+            const eventDate = parse(`${event.date} ${currentYear}`, 'MMM dd yyyy', new Date());
+            return {
+              ...event,
+              isCompleted: isPast(eventDate),
+            };
+          } catch {
+            return {
+              ...event,
+              isCompleted: false,
+            };
+          }
         });
-      }, []);
+      }, [events]);
+
+  if (isLoading) {
+    return (
+      <section id="events" className="section-standard bg-dark-bg text-dark-fg z-30 overflow-hidden">
+        <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter title-hover-neon-green text-center mb-8">
+          Upcoming Events
+        </h2>
+        <div className="flex items-center justify-center h-40">
+          <div className="w-6 h-6 border-2 border-[#39FF14]/30 border-t-[#39FF14] rounded-full animate-spin" />
+        </div>
+      </section>
+    );
+  }
+
+  if (!events || events.length === 0) {
+    return (
+      <section id="events" className="section-standard bg-dark-bg text-dark-fg z-30 overflow-hidden">
+        <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter title-hover-neon-green text-center mb-8">
+          Upcoming Events
+        </h2>
+        <p className="text-gray-400 text-lg text-center">No events available yet.</p>
+      </section>
+    );
+  }
 
   return (
     <section id="events" className="section-standard bg-dark-bg text-dark-fg z-30 overflow-hidden">
