@@ -48,3 +48,11 @@ export interface DynamicSection {
   section_type: string;
   created_at: string;
 }
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role?: string;
+  created_at: string;
+}
