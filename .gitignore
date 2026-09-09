@@ -13,6 +13,8 @@ dist-ssr
 *.local
 .env
 .env.*
+.agent/
+openspec/
 
 
 # Editor directories and files
