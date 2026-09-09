@@ -1,8 +1,11 @@
+import { Shield } from 'lucide-react';
+
 interface HeaderProps {
   onMenuToggle: () => void;
+  onAdminClick?: () => void;
 }
 
-const Header = ({ onMenuToggle }: HeaderProps) => {
+const Header = ({ onMenuToggle, onAdminClick }: HeaderProps) => {
   return (
     <header 
       id="header" 
@@ -11,13 +14,27 @@ const Header = ({ onMenuToggle }: HeaderProps) => {
       <a href="#home" className="text-xl font-bold tracking-wider">
         NEXTGENXAI
       </a>
-      <button 
-        id="menu-toggle"
-        className="text-xl font-bold tracking-wider focus:outline-none"
-        onMouseEnter={onMenuToggle}
-      >
-        MENU
-      </button>
+      <div className="flex items-center gap-4">
+        {onAdminClick && (
+          <button
+            type="button"
+            onClick={onAdminClick}
+            aria-label="Admin Login"
+            className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full border border-white/30 hover:border-[#39FF14] hover:text-[#39FF14] transition-all cursor-pointer"
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span>Admin</span>
+          </button>
+        )}
+        <button 
+          id="menu-toggle"
+          className="text-xl font-bold tracking-wider focus:outline-none cursor-pointer"
+          onMouseEnter={onMenuToggle}
+          onClick={onMenuToggle}
+        >
+          MENU
+        </button>
+      </div>
     </header>
   );
 };

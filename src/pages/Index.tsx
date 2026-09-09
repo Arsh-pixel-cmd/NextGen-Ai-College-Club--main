@@ -13,12 +13,14 @@ import NewsSection from "@/components/NewsSection";
 import EventsSection from "@/components/EventsSection";
 import MemberAccess from "@/components/MemberAccess";
 import DynamicSectionsRenderer from "@/components/DynamicSectionsRenderer";
+import Footer from "@/components/Footer";
+import AdminLoginModal from "@/components/admin/AdminLoginModal";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
-import Footer from "@/components/Footer";
 
 const Index = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -38,6 +40,7 @@ const Index = () => {
 
   const handleMenuToggle = () => setIsMenuOpen(true);
   const handleMenuClose = () => setIsMenuOpen(false);
+  const handleAdminClick = () => setIsAdminModalOpen(true);
 
   if (loading) {
     return (
@@ -49,8 +52,12 @@ const Index = () => {
 
   return (
     <div className="overflow-x-hidden bg-dark-bg font-inter">
-      <Header onMenuToggle={handleMenuToggle} />
-      <MenuOverlay isOpen={isMenuOpen} onClose={handleMenuClose} />
+      <Header onMenuToggle={handleMenuToggle} onAdminClick={handleAdminClick} />
+      <MenuOverlay 
+        isOpen={isMenuOpen} 
+        onClose={handleMenuClose} 
+        onAdminClick={handleAdminClick} 
+      />
       
       <main id="smooth-wrapper">
         <div id="smooth-content">
@@ -66,13 +73,18 @@ const Index = () => {
               <Dashboard />
             </>
           ) : (
-            <MemberAccess />
+            <MemberAccess onAdminClick={handleAdminClick} />
           )}
 
           <DynamicSectionsRenderer />
-          <Footer />
+          <Footer onAdminClick={handleAdminClick} />
         </div>
       </main>
+
+      <AdminLoginModal 
+        open={isAdminModalOpen} 
+        onOpenChange={setIsAdminModalOpen} 
+      />
 
       <ChatBot />
     </div>

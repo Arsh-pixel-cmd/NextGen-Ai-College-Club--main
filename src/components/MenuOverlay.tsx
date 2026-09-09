@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
+import { Shield } from 'lucide-react';
 
 interface MenuOverlayProps {
   isOpen: boolean;
   onClose: () => void;
+  onAdminClick?: () => void;
 }
 
-const MenuOverlay = ({ isOpen, onClose }: MenuOverlayProps) => {
+const MenuOverlay = ({ isOpen, onClose, onAdminClick }: MenuOverlayProps) => {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,13 +39,11 @@ const MenuOverlay = ({ isOpen, onClose }: MenuOverlayProps) => {
     >
       {/* Video Background */}
       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-900/50 to-blue-900/50 z-0" >
-      <video src="/videos/menuBackground.mp4" autoPlay loop muted className="w-full h-full object-cover"></video>
+        <video src="/videos/menuBackground.mp4" autoPlay loop muted className="w-full h-full object-cover"></video>
       </div>
       
       {/* Dark Overlay for Readability */}
       <div className="absolute top-0 left-0 w-full h-full bg-black/70 z-10" />
-      
-      
       
       <nav className="text-center z-20">
         <ul className="space-y-4">
@@ -83,6 +83,21 @@ const MenuOverlay = ({ isOpen, onClose }: MenuOverlayProps) => {
               Contact
             </a>
           </li>
+          {onAdminClick && (
+            <li className="pt-4">
+              <button
+                type="button"
+                className="text-base md:text-lg font-bold uppercase tracking-widest text-gray-400 hover:text-[#39FF14] transition-colors flex items-center gap-2 mx-auto px-4 py-2 rounded-full border border-gray-700 hover:border-[#39FF14]/50 bg-black/40 backdrop-blur-sm cursor-pointer"
+                onClick={() => {
+                  onClose();
+                  onAdminClick();
+                }}
+              >
+                <Shield className="w-4 h-4 text-[#39FF14]" />
+                <span>Admin Login</span>
+              </button>
+            </li>
+          )}
         </ul>
       </nav>
       

@@ -2,9 +2,13 @@
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { Chrome } from "lucide-react";
+import { Chrome, Shield } from "lucide-react";
 
-const MemberAccess = () => {
+interface MemberAccessProps {
+  onAdminClick?: () => void;
+}
+
+const MemberAccess = ({ onAdminClick }: MemberAccessProps) => {
   const handleGoogleSignIn = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -35,14 +39,27 @@ const MemberAccess = () => {
           Sign in to view exclusive content, upcoming events, and more.
         </p>
         
-        <div className="mt-8">
+        <div className="mt-8 space-y-4">
           <Button 
             onClick={handleGoogleSignIn}
-            className="w-full px-8 py-6 bg-white text-black text-lg font-bold hover:bg-gray-200 transition-colors duration-300 flex items-center justify-center gap-3"
+            className="w-full px-8 py-6 bg-white text-black text-lg font-bold hover:bg-gray-200 transition-colors duration-300 flex items-center justify-center gap-3 cursor-pointer"
           >
             <Chrome className="h-6 w-6" />
             <span>Sign In with Google</span>
           </Button>
+
+          {onAdminClick && (
+            <div className="pt-3 border-t border-gray-800/80">
+              <button
+                type="button"
+                onClick={onAdminClick}
+                className="text-xs text-gray-400 hover:text-[#39FF14] transition-colors inline-flex items-center gap-1.5 py-1 cursor-pointer"
+              >
+                <Shield className="w-3.5 h-3.5 text-[#39FF14]" />
+                <span>Core Team Admin Login</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </section>
