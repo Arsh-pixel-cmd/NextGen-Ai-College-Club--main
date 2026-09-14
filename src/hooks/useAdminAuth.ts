@@ -1,8 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { AdminUser } from '@/types/content';
+import { z } from 'zod';
 
 const ADMIN_STORAGE_KEY = 'nextgen_admin_session';
+
+// Zod validation schema for Admin Email
+export const adminEmailSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, { message: 'Email address is required.' })
+    .email({ message: 'Please enter a valid email address.' }),
+});
 
 export interface AdminAuthUser {
   id: string;
@@ -16,7 +26,26 @@ export function useAdminAuth() {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Initialize session from localStorage and verify against Supabase
+  // Helper to verify if an email exists in the Supabase admin_users table
+  const verifyAdminInDatabase = useCallback(async (email: string): Promise<AdminUser | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .ilike('email', email.trim())
+        .maybeSingle();
+
+      if (error || !data) {
+        return null;
+      }
+      return data as AdminUser;
+    } catch (err) {
+      console.error('[AdminAuth] Error querying admin_users table:', err);
+      return null;
+    }
+  }, []);
+
+  // Initialize and restore session from localStorage and verify against Supabase
   useEffect(() => {
     let isMounted = true;
 
@@ -43,35 +72,21 @@ export function useAdminAuth() {
           return;
         }
 
-        // Set initial state from cached valid session
+        // Validate currently stored email against Supabase admin_users table
+        const profile = await verifyAdminInDatabase(parsed.email);
         if (isMounted) {
-          setAdminProfile(parsed);
-          setIsAdmin(true);
-        }
-
-        // Verify in Supabase that the email is still an authorized admin
-        const { data, error } = await supabase
-          .from('admin_users')
-          .select('*')
-          .ilike('email', parsed.email.trim())
-          .maybeSingle();
-
-        if (isMounted) {
-          if (error || !data) {
-            // If verification fails or user was removed, clear session
-            console.warn('Admin session validation failed or email not found:', error);
+          if (profile) {
+            localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(profile));
+            setAdminProfile(profile);
+            setIsAdmin(true);
+          } else {
             localStorage.removeItem(ADMIN_STORAGE_KEY);
             setAdminProfile(null);
             setIsAdmin(false);
-          } else {
-            const updatedProfile = data as AdminUser;
-            localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(updatedProfile));
-            setAdminProfile(updatedProfile);
-            setIsAdmin(true);
           }
         }
       } catch (err) {
-        console.error('Error restoring admin session:', err);
+        console.error('[AdminAuth] Error restoring session:', err);
         localStorage.removeItem(ADMIN_STORAGE_KEY);
         if (isMounted) {
           setAdminProfile(null);
@@ -89,54 +104,43 @@ export function useAdminAuth() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [verifyAdminInDatabase]);
 
-  const verifyAdminEmail = useCallback(async (emailInput: string): Promise<AdminUser> => {
-    const trimmedEmail = emailInput.trim();
-    if (!trimmedEmail) {
-      throw new Error('Please enter your email address.');
-    }
+  // Sign in using ONLY email listed in Supabase admin_users table
+  const signIn = useCallback(
+    async (emailInput: string): Promise<AdminUser> => {
+      // Validate input with Zod
+      const validation = adminEmailSchema.safeParse({
+        email: emailInput,
+      });
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      throw new Error('Please enter a valid email address.');
-    }
+      if (!validation.success) {
+        const firstError = validation.error.errors[0]?.message || 'Please enter a valid email address.';
+        throw new Error(firstError);
+      }
 
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('*')
-      .ilike('email', trimmedEmail)
-      .maybeSingle();
+      const { email } = validation.data;
 
-    if (error) {
-      console.error('Supabase admin check error:', error);
-      throw new Error('Database error while verifying admin access. Please verify database permissions.');
-    }
+      // Verify email existence in Supabase admin_users table
+      const profile = await verifyAdminInDatabase(email);
+      if (!profile) {
+        throw new Error(
+          'Access denied: Your email is not registered in the authorized core team admin list.'
+        );
+      }
 
-    if (!data) {
-      throw new Error('Access denied: Your email is not registered in the authorized core team admin list.');
-    }
-
-    const profile = data as AdminUser;
-    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(profile));
-    setAdminProfile(profile);
-    setIsAdmin(true);
-    return profile;
-  }, []);
-
-  const signIn = useCallback(async (emailInput: string) => {
-    return verifyAdminEmail(emailInput);
-  }, [verifyAdminEmail]);
+      localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(profile));
+      setAdminProfile(profile);
+      setIsAdmin(true);
+      return profile;
+    },
+    [verifyAdminInDatabase]
+  );
 
   const signOut = useCallback(async () => {
     localStorage.removeItem(ADMIN_STORAGE_KEY);
     setAdminProfile(null);
     setIsAdmin(false);
-    try {
-      await supabase.auth.signOut();
-    } catch {
-      // Ignore errors from supabase auth signout
-    }
   }, []);
 
   const user: AdminAuthUser | null = adminProfile
@@ -153,9 +157,7 @@ export function useAdminAuth() {
     isAdmin,
     adminProfile,
     loading,
-    verifyAdminEmail,
     signIn,
     signOut,
   };
 }
-

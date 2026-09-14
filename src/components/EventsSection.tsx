@@ -1,4 +1,3 @@
-'use client';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import { Check, Calendar } from 'lucide-react';

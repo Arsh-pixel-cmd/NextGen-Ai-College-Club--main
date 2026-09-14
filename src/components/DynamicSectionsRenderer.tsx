@@ -1,45 +1,55 @@
 import { useDynamicSections } from '@/hooks/useDynamicSections';
 import { motion } from 'framer-motion';
 import type { ContentBlock } from '@/types/content';
+import { sanitizeHtml, isSafeUrl } from '@/lib/security';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-const BlockCard = ({ block }: { block: ContentBlock }) => (
-  <motion.div
-    variants={cardVariants}
-    initial="hidden"
-    whileInView="visible"
-    viewport={{ once: true, amount: 0.3 }}
-    className="bg-[#1C1C1C] border border-gray-800 rounded-xl overflow-hidden hover:border-gray-700 transition-colors"
-  >
-    {block.image_url && (
-      <img
-        src={block.image_url}
-        alt={block.title}
-        className="w-full h-48 object-cover"
-      />
-    )}
-    <div className="p-5">
-      <h3 className="text-white font-bold text-lg mb-2">{block.title}</h3>
-      {block.description && (
-        <p className="text-gray-400 text-sm leading-relaxed">{block.description}</p>
+const BlockCard = ({ block }: { block: ContentBlock }) => {
+  const safeImageUrl = block.image_url && isSafeUrl(block.image_url) ? block.image_url : null;
+  const safeLink = block.link && isSafeUrl(block.link) ? block.link : null;
+  const sanitizedDesc = block.description ? sanitizeHtml(block.description) : '';
+
+  return (
+    <motion.div
+      variants={cardVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.3 }}
+      className="bg-[#1C1C1C] border border-gray-800 rounded-xl overflow-hidden hover:border-gray-700 transition-colors"
+    >
+      {safeImageUrl && (
+        <img
+          src={safeImageUrl}
+          alt={block.title}
+          className="w-full h-48 object-cover"
+        />
       )}
-      {block.link && (
-        <a
-          href={block.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block mt-3 text-[#39FF14] text-sm font-medium hover:underline"
-        >
-          Learn more →
-        </a>
-      )}
-    </div>
-  </motion.div>
-);
+      <div className="p-5">
+        <h3 className="text-white font-bold text-lg mb-2">{block.title}</h3>
+        {sanitizedDesc && (
+          <p
+            className="text-gray-400 text-sm leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: sanitizedDesc }}
+          />
+        )}
+        {safeLink && (
+          <a
+            href={safeLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-3 text-[#39FF14] text-sm font-medium hover:underline"
+          >
+            Learn more →
+          </a>
+        )}
+      </div>
+    </motion.div>
+  );
+};
 
 const DynamicSectionsRenderer = () => {
   const { data: sections, isLoading } = useDynamicSections(true);

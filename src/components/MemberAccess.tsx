@@ -1,4 +1,3 @@
-'use client';
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";

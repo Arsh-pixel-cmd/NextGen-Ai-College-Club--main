@@ -1,11 +1,11 @@
-"use client";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { gsap } from "gsap";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const MediaCluster = () => {
   const clusterRef = useRef<HTMLDivElement>(null);
   const mediaElements = useRef<(HTMLImageElement | HTMLVideoElement)[]>([]);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = !!useIsMobile();
   const mobileFloatTimelines = useRef<gsap.core.Timeline[]>([]);
 
   const mediaData = [
@@ -51,12 +51,6 @@ const MediaCluster = () => {
     [mediaData.length]
   );
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   useEffect(() => {
     const allMedia = mediaElements.current;

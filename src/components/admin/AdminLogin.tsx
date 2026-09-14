@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+import { checkRateLimit, resetRateLimit } from '@/lib/rateLimiter';
+
 const AdminLogin = () => {
   const { signIn } = useAdminAuth();
   const [email, setEmail] = useState('');
@@ -14,10 +16,19 @@ const AdminLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const limit = checkRateLimit('admin-login-attempt', 5, 60000);
+    if (!limit.allowed) {
+      const waitSec = Math.ceil(limit.retryAfterMs / 1000);
+      setError(`Too many login attempts. Please wait ${waitSec} second${waitSec === 1 ? '' : 's'} before trying again.`);
+      return;
+    }
+
     setLoading(true);
 
     try {
       await signIn(email);
+      resetRateLimit('admin-login-attempt');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Authentication failed';
       setError(message);
@@ -42,7 +53,7 @@ const AdminLogin = () => {
 
         {/* Logo / Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#39FF14]/20 to-[#39FF14]/5 border border-[#39FF14]/30 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#39FF14]/20 to-[#39FF14]/5 border border-[#39FF14]/30 mb-4 shadow-[0_0_20px_rgba(57,255,20,0.15)]">
             <Shield className="w-8 h-8 text-[#39FF14]" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Admin Portal</h1>
@@ -81,7 +92,7 @@ const AdminLogin = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-11 mt-2 bg-[#39FF14] text-black font-semibold hover:bg-[#39FF14]/90 transition-all duration-200 disabled:opacity-50 gap-2"
+              className="w-full h-11 mt-2 bg-[#39FF14] text-black font-semibold hover:bg-[#39FF14]/90 transition-all duration-200 disabled:opacity-50 gap-2 shadow-[0_0_15px_rgba(57,255,20,0.2)]"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -99,7 +110,7 @@ const AdminLogin = () => {
         </div>
 
         <p className="text-center text-gray-600 text-xs mt-6">
-          Access is strictly restricted to emails pre-registered in <code className="text-gray-500">admin_users</code>.
+          Access is restricted to authorized emails listed in Supabase <code className="text-gray-500">admin_users</code>.
         </p>
       </div>
     </div>
@@ -107,4 +118,3 @@ const AdminLogin = () => {
 };
 
 export default AdminLogin;
-

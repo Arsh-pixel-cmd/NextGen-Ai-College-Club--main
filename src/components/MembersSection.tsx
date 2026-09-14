@@ -1,5 +1,3 @@
-
-'use client';
 import * as React from "react";
 import DomeGallery from './DomeGallery';
 import { useTeamMembers } from '@/hooks/useTeamMembers';

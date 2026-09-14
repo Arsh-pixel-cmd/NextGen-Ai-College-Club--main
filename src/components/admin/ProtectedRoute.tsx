@@ -1,6 +1,6 @@
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import AdminLogin from './AdminLogin';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
@@ -14,8 +14,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#39FF14]/30 border-t-[#39FF14] rounded-full animate-spin" />
-          <p className="text-gray-500 text-sm">Verifying core team permissions...</p>
+          <Loader2 className="w-8 h-8 text-[#39FF14] animate-spin" />
+          <p className="text-gray-400 text-sm font-medium">Verifying core team session...</p>
         </div>
       </div>
     );
@@ -35,7 +35,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           <h2 className="text-xl font-bold text-white mb-2">Access Denied</h2>
           <p className="text-gray-400 text-sm mb-6 leading-relaxed">
             Signed in as <span className="text-white font-medium">{user.email}</span>.<br />
-            This account is not authorized as a core team administrator.
+            This account is not authorized in the core team admin registry.
           </p>
           <div className="flex flex-col gap-2">
             <Button
@@ -50,7 +50,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
               variant="ghost"
               className="text-gray-400 hover:text-white"
             >
-              <a href="/">Return to Website</a>
+              <a href="/">Return to Public Website</a>
             </Button>
           </div>
         </div>

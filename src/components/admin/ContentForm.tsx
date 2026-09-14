@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,7 @@ const ContentForm = ({
   // Stable serialized key to prevent re-renders while typing from triggering useEffect
   const initialValuesKey = JSON.stringify(initialValues ?? {});
 
-  const getInitialState = () => {
+  const getInitialState = useCallback(() => {
     const defaults: Record<string, string | number> = {};
     fields.forEach((f) => {
       const val = initialValues?.[f.name];
@@ -56,7 +56,7 @@ const ContentForm = ({
       }
     });
     return defaults;
-  };
+  }, [fields, initialValues]);
 
   const [values, setValues] = useState<Record<string, string | number>>(getInitialState);
 
@@ -65,7 +65,7 @@ const ContentForm = ({
     if (open) {
       setValues(getInitialState());
     }
-  }, [open, initialValuesKey]);
+  }, [open, initialValuesKey, getInitialState]);
 
   const handleChange = (name: string, value: string | number) => {
     setValues((prev) => ({ ...prev, [name]: value }));

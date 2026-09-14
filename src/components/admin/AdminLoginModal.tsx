@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Shield, Mail, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
+
+import { checkRateLimit, resetRateLimit } from '@/lib/rateLimiter';
 
 interface AdminLoginModalProps {
   open: boolean;
@@ -30,10 +32,19 @@ export default function AdminLoginModal({ open, onOpenChange }: AdminLoginModalP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const limit = checkRateLimit('admin-login-modal-attempt', 5, 60000);
+    if (!limit.allowed) {
+      const waitSec = Math.ceil(limit.retryAfterMs / 1000);
+      setError(`Too many login attempts. Please wait ${waitSec} second${waitSec === 1 ? '' : 's'} before trying again.`);
+      return;
+    }
+
     setLoading(true);
 
     try {
       await signIn(email);
+      resetRateLimit('admin-login-modal-attempt');
       toast.success('Admin verified successfully!');
       onOpenChange(false);
       navigate('/admin');
@@ -69,7 +80,7 @@ export default function AdminLoginModal({ open, onOpenChange }: AdminLoginModalP
           <div className="py-4 space-y-4 text-center">
             <div className="p-3 bg-[#39FF14]/10 border border-[#39FF14]/20 rounded-lg text-[#39FF14] text-sm flex items-center justify-center gap-2">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-              <span>You are currently verified as an admin ({user.email}).</span>
+              <span>Signed in as administrator ({user.email}).</span>
             </div>
             <div className="flex flex-col gap-2">
               <Button
@@ -84,7 +95,7 @@ export default function AdminLoginModal({ open, onOpenChange }: AdminLoginModalP
                 variant="ghost"
                 className="text-xs text-gray-400 hover:text-white"
               >
-                Sign In With Different Email
+                Sign Out
               </Button>
             </div>
           </div>
@@ -97,7 +108,7 @@ export default function AdminLoginModal({ open, onOpenChange }: AdminLoginModalP
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3.5">
               <div className="space-y-1.5">
                 <Label htmlFor="admin-modal-email" className="text-gray-300 text-xs font-medium">
                   Administrator Email
@@ -120,7 +131,7 @@ export default function AdminLoginModal({ open, onOpenChange }: AdminLoginModalP
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-10 bg-[#39FF14] text-black font-semibold hover:bg-[#39FF14]/90 transition-all text-sm disabled:opacity-50"
+                className="w-full h-10 bg-[#39FF14] text-black font-semibold hover:bg-[#39FF14]/90 transition-all text-sm disabled:opacity-50 mt-1"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -134,7 +145,7 @@ export default function AdminLoginModal({ open, onOpenChange }: AdminLoginModalP
             </form>
 
             <p className="text-[11px] text-gray-500 text-center leading-normal">
-              Access is strictly verified against pre-registered emails in Supabase.
+              Access is verified against pre-registered emails in Supabase <code className="text-gray-400">admin_users</code>.
             </p>
           </div>
         )}
@@ -142,4 +153,3 @@ export default function AdminLoginModal({ open, onOpenChange }: AdminLoginModalP
     </Dialog>
   );
 }
-

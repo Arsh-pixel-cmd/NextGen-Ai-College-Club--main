@@ -7,6 +7,13 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      '/api/supabase': {
+        target: process.env.VITE_SUPABASE_URL || 'https://ekyknbcoaszahsgplilu.supabase.co',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/supabase/, ''),
+      },
+    },
   },
   base: "/", // ✅ Correct placement for base (important for Vercel)
   plugins: [

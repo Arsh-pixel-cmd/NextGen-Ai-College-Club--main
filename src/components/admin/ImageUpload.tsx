@@ -2,8 +2,9 @@ import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, X, Loader2, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
+import { Upload, X, Loader2, Image as ImageIcon, Link as LinkIcon, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { isSafeUrl } from '@/lib/security';
 
 interface ImageUploadProps {
   value: string;
@@ -74,9 +75,9 @@ export const ImageUpload = ({
 
       onChange(publicUrlData.publicUrl);
       toast.success('Image uploaded successfully!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Storage upload error:', err);
-      const msg = err?.message || 'Failed to upload image';
+      const msg = err instanceof Error ? err.message : String(err) || 'Failed to upload image';
       if (msg.toLowerCase().includes('bucket not found') || msg.toLowerCase().includes('not found')) {
         toast.error('Bucket "team-images" not found. Please run SQL migration 005 or paste a URL below.');
         setMode('url');
@@ -92,6 +93,20 @@ export const ImageUpload = ({
   const handleRemove = () => {
     onChange('');
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const [urlError, setUrlError] = useState('');
+
+  const handleUrlInput = (inputVal: string) => {
+    onChange(inputVal);
+    const trimmed = inputVal.trim();
+    if (!trimmed) {
+      setUrlError('');
+    } else if (!isSafeUrl(trimmed)) {
+      setUrlError('Please enter a valid, safe image URL (http:// or https://)');
+    } else {
+      setUrlError('');
+    }
   };
 
   return (
@@ -131,11 +146,10 @@ export const ImageUpload = ({
       {value ? (
         <div className="relative flex items-center gap-3 p-2 bg-[#141414] border border-gray-700 rounded-lg">
           <img
-            src={value}
+            src={isSafeUrl(value) ? value : 'https://via.placeholder.com/150?text=Invalid+URL'}
             alt="Preview"
             className="w-14 h-14 rounded-md object-cover bg-gray-800 border border-gray-700 flex-shrink-0"
             onError={(e) => {
-              // Handle broken image
               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Error';
             }}
           />
@@ -202,14 +216,22 @@ export const ImageUpload = ({
         </div>
       ) : (
         /* URL Input Mode */
-        <div>
+        <div className="space-y-1">
           <Input
             type="url"
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => handleUrlInput(e.target.value)}
             placeholder={placeholder}
-            className="bg-[#141414] border-gray-700 text-white text-xs placeholder:text-gray-600 focus:border-[#39FF14]"
+            className={`bg-[#141414] border-gray-700 text-white text-xs placeholder:text-gray-600 focus:border-[#39FF14] ${
+              urlError ? 'border-red-500/80 focus:border-red-500' : ''
+            }`}
           />
+          {urlError && (
+            <p className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
+              <AlertCircle className="w-3 h-3 flex-shrink-0" />
+              <span>{urlError}</span>
+            </p>
+          )}
         </div>
       )}
     </div>
