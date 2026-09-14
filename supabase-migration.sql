@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS public.admin_users (
 ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Authenticated read for admin_users" ON public.admin_users;
-CREATE POLICY "Authenticated read for admin_users"
+DROP POLICY IF EXISTS "Public read access for admin_users" ON public.admin_users;
+CREATE POLICY "Public read access for admin_users"
   ON public.admin_users FOR SELECT
-  TO authenticated
   USING (true);
 
 DROP POLICY IF EXISTS "Admin modify for admin_users" ON public.admin_users;
@@ -62,31 +62,19 @@ CREATE TABLE IF NOT EXISTS public.team_members (
 ALTER TABLE public.team_members ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public read access for team_members" ON public.team_members;
-CREATE POLICY "Public read access for team_members"
-  ON public.team_members FOR SELECT
-  USING (true);
-
 DROP POLICY IF EXISTS "Authenticated insert for team_members" ON public.team_members;
 DROP POLICY IF EXISTS "Admin insert for team_members" ON public.team_members;
-CREATE POLICY "Admin insert for team_members"
-  ON public.team_members FOR INSERT
-  TO authenticated
-  WITH CHECK (public.is_admin());
-
 DROP POLICY IF EXISTS "Authenticated update for team_members" ON public.team_members;
 DROP POLICY IF EXISTS "Admin update for team_members" ON public.team_members;
-CREATE POLICY "Admin update for team_members"
-  ON public.team_members FOR UPDATE
-  TO authenticated
-  USING (public.is_admin())
-  WITH CHECK (public.is_admin());
-
 DROP POLICY IF EXISTS "Authenticated delete for team_members" ON public.team_members;
 DROP POLICY IF EXISTS "Admin delete for team_members" ON public.team_members;
-CREATE POLICY "Admin delete for team_members"
-  ON public.team_members FOR DELETE
-  TO authenticated
-  USING (public.is_admin());
+DROP POLICY IF EXISTS "Allow all access for team_members" ON public.team_members;
+
+CREATE POLICY "Allow all access for team_members"
+  ON public.team_members FOR ALL
+  TO public
+  USING (true)
+  WITH CHECK (true);
 
 
 -- ============================================================
@@ -108,31 +96,19 @@ CREATE TABLE IF NOT EXISTS public.blog_posts (
 ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public read access for blog_posts" ON public.blog_posts;
-CREATE POLICY "Public read access for blog_posts"
-  ON public.blog_posts FOR SELECT
-  USING (true);
-
 DROP POLICY IF EXISTS "Authenticated insert for blog_posts" ON public.blog_posts;
 DROP POLICY IF EXISTS "Admin insert for blog_posts" ON public.blog_posts;
-CREATE POLICY "Admin insert for blog_posts"
-  ON public.blog_posts FOR INSERT
-  TO authenticated
-  WITH CHECK (public.is_admin());
-
 DROP POLICY IF EXISTS "Authenticated update for blog_posts" ON public.blog_posts;
 DROP POLICY IF EXISTS "Admin update for blog_posts" ON public.blog_posts;
-CREATE POLICY "Admin update for blog_posts"
-  ON public.blog_posts FOR UPDATE
-  TO authenticated
-  USING (public.is_admin())
-  WITH CHECK (public.is_admin());
-
 DROP POLICY IF EXISTS "Authenticated delete for blog_posts" ON public.blog_posts;
 DROP POLICY IF EXISTS "Admin delete for blog_posts" ON public.blog_posts;
-CREATE POLICY "Admin delete for blog_posts"
-  ON public.blog_posts FOR DELETE
-  TO authenticated
-  USING (public.is_admin());
+DROP POLICY IF EXISTS "Allow all access for blog_posts" ON public.blog_posts;
+
+CREATE POLICY "Allow all access for blog_posts"
+  ON public.blog_posts FOR ALL
+  TO public
+  USING (true)
+  WITH CHECK (true);
 
 
 -- ============================================================
@@ -151,31 +127,19 @@ CREATE TABLE IF NOT EXISTS public.events (
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public read access for events" ON public.events;
-CREATE POLICY "Public read access for events"
-  ON public.events FOR SELECT
-  USING (true);
-
 DROP POLICY IF EXISTS "Authenticated insert for events" ON public.events;
 DROP POLICY IF EXISTS "Admin insert for events" ON public.events;
-CREATE POLICY "Admin insert for events"
-  ON public.events FOR INSERT
-  TO authenticated
-  WITH CHECK (public.is_admin());
-
 DROP POLICY IF EXISTS "Authenticated update for events" ON public.events;
 DROP POLICY IF EXISTS "Admin update for events" ON public.events;
-CREATE POLICY "Admin update for events"
-  ON public.events FOR UPDATE
-  TO authenticated
-  USING (public.is_admin())
-  WITH CHECK (public.is_admin());
-
 DROP POLICY IF EXISTS "Authenticated delete for events" ON public.events;
 DROP POLICY IF EXISTS "Admin delete for events" ON public.events;
-CREATE POLICY "Admin delete for events"
-  ON public.events FOR DELETE
-  TO authenticated
-  USING (public.is_admin());
+DROP POLICY IF EXISTS "Allow all access for events" ON public.events;
+
+CREATE POLICY "Allow all access for events"
+  ON public.events FOR ALL
+  TO public
+  USING (true)
+  WITH CHECK (true);
 
 
 -- ============================================================
@@ -195,31 +159,19 @@ CREATE TABLE IF NOT EXISTS public.dynamic_sections (
 ALTER TABLE public.dynamic_sections ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public read access for dynamic_sections" ON public.dynamic_sections;
-CREATE POLICY "Public read access for dynamic_sections"
-  ON public.dynamic_sections FOR SELECT
-  USING (true);
-
 DROP POLICY IF EXISTS "Authenticated insert for dynamic_sections" ON public.dynamic_sections;
 DROP POLICY IF EXISTS "Admin insert for dynamic_sections" ON public.dynamic_sections;
-CREATE POLICY "Admin insert for dynamic_sections"
-  ON public.dynamic_sections FOR INSERT
-  TO authenticated
-  WITH CHECK (public.is_admin());
-
 DROP POLICY IF EXISTS "Authenticated update for dynamic_sections" ON public.dynamic_sections;
 DROP POLICY IF EXISTS "Admin update for dynamic_sections" ON public.dynamic_sections;
-CREATE POLICY "Admin update for dynamic_sections"
-  ON public.dynamic_sections FOR UPDATE
-  TO authenticated
-  USING (public.is_admin())
-  WITH CHECK (public.is_admin());
-
 DROP POLICY IF EXISTS "Authenticated delete for dynamic_sections" ON public.dynamic_sections;
 DROP POLICY IF EXISTS "Admin delete for dynamic_sections" ON public.dynamic_sections;
-CREATE POLICY "Admin delete for dynamic_sections"
-  ON public.dynamic_sections FOR DELETE
-  TO authenticated
-  USING (public.is_admin());
+DROP POLICY IF EXISTS "Allow all access for dynamic_sections" ON public.dynamic_sections;
+
+CREATE POLICY "Allow all access for dynamic_sections"
+  ON public.dynamic_sections FOR ALL
+  TO public
+  USING (true)
+  WITH CHECK (true);
 
 
 -- ============================================================

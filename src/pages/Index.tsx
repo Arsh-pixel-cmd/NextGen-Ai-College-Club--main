@@ -56,7 +56,6 @@ const Index = () => {
       <MenuOverlay 
         isOpen={isMenuOpen} 
         onClose={handleMenuClose} 
-        onAdminClick={handleAdminClick} 
       />
       
       <main id="smooth-wrapper">
@@ -73,11 +72,11 @@ const Index = () => {
               <Dashboard />
             </>
           ) : (
-            <MemberAccess onAdminClick={handleAdminClick} />
+            <MemberAccess />
           )}
 
           <DynamicSectionsRenderer />
-          <Footer onAdminClick={handleAdminClick} />
+          <Footer />
         </div>
       </main>
 

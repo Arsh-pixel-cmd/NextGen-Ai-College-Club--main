@@ -40,10 +40,12 @@ export function useTeamMemberMutations() {
         .from('team_members')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) {
+        throw new Error('Team member could not be updated. Please verify Supabase RLS permissions.');
+      }
+      return data[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team_members'] });
@@ -52,11 +54,16 @@ export function useTeamMemberMutations() {
 
   const deleteMember = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('team_members')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('Team member could not be deleted. Please verify Supabase RLS permissions.');
+      }
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team_members'] });

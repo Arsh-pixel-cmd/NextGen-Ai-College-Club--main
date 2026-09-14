@@ -1,129 +1,161 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { User } from '@supabase/supabase-js';
 import type { AdminUser } from '@/types/content';
 
+const ADMIN_STORAGE_KEY = 'nextgen_admin_session';
+
+export interface AdminAuthUser {
+  id: string;
+  email: string;
+  name?: string;
+  role?: string;
+}
+
 export function useAdminAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [adminProfile, setAdminProfile] = useState<AdminUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const verifyAdmin = async (currentUser: User | null): Promise<AdminUser | null> => {
-    if (!currentUser?.email) return null;
-
-    try {
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .ilike('email', currentUser.email)
-        .maybeSingle();
-
-      if (error || !data) {
-        return null;
-      }
-      return data as AdminUser;
-    } catch {
-      return null;
-    }
-  };
-
+  // Initialize session from localStorage and verify against Supabase
   useEffect(() => {
     let isMounted = true;
 
-    const initAuth = async () => {
+    const restoreSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const currentUser = session?.user ?? null;
-        if (!isMounted) return;
-
-        setUser(currentUser);
-        if (currentUser) {
-          const profile = await verifyAdmin(currentUser);
+        const stored = localStorage.getItem(ADMIN_STORAGE_KEY);
+        if (!stored) {
           if (isMounted) {
-            setIsAdmin(!!profile);
-            setAdminProfile(profile);
+            setAdminProfile(null);
+            setIsAdmin(false);
+            setLoading(false);
           }
-        } else {
-          setIsAdmin(false);
+          return;
+        }
+
+        const parsed = JSON.parse(stored) as AdminUser;
+        if (!parsed?.email) {
+          localStorage.removeItem(ADMIN_STORAGE_KEY);
+          if (isMounted) {
+            setAdminProfile(null);
+            setIsAdmin(false);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Set initial state from cached valid session
+        if (isMounted) {
+          setAdminProfile(parsed);
+          setIsAdmin(true);
+        }
+
+        // Verify in Supabase that the email is still an authorized admin
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('*')
+          .ilike('email', parsed.email.trim())
+          .maybeSingle();
+
+        if (isMounted) {
+          if (error || !data) {
+            // If verification fails or user was removed, clear session
+            console.warn('Admin session validation failed or email not found:', error);
+            localStorage.removeItem(ADMIN_STORAGE_KEY);
+            setAdminProfile(null);
+            setIsAdmin(false);
+          } else {
+            const updatedProfile = data as AdminUser;
+            localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(updatedProfile));
+            setAdminProfile(updatedProfile);
+            setIsAdmin(true);
+          }
+        }
+      } catch (err) {
+        console.error('Error restoring admin session:', err);
+        localStorage.removeItem(ADMIN_STORAGE_KEY);
+        if (isMounted) {
           setAdminProfile(null);
+          setIsAdmin(false);
         }
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    initAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      if (currentUser) {
-        const profile = await verifyAdmin(currentUser);
-        setIsAdmin(!!profile);
-        setAdminProfile(profile);
-      } else {
-        setIsAdmin(false);
-        setAdminProfile(null);
-      }
-      setLoading(false);
-    });
+    restoreSession();
 
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-
-    // Verify admin status after authentication
-    const profile = await verifyAdmin(data.user);
-    if (!profile) {
-      await supabase.auth.signOut();
-      throw new Error('Access denied: Your account is not authorized as a core team administrator.');
+  const verifyAdminEmail = useCallback(async (emailInput: string): Promise<AdminUser> => {
+    const trimmedEmail = emailInput.trim();
+    if (!trimmedEmail) {
+      throw new Error('Please enter your email address.');
     }
 
-    setUser(data.user);
-    setIsAdmin(true);
-    setAdminProfile(profile);
-    return data;
-  }, []);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      throw new Error('Please enter a valid email address.');
+    }
 
-  const signUp = useCallback(async (email: string, password: string, name?: string) => {
-    // Verify that the email is pre-authorized in admin_users
-    const { data: adminRecord, error: checkError } = await supabase
+    const { data, error } = await supabase
       .from('admin_users')
       .select('*')
-      .ilike('email', email)
+      .ilike('email', trimmedEmail)
       .maybeSingle();
 
-    if (checkError || !adminRecord) {
-      throw new Error('Access denied: This email is not pre-authorized as a core team member. Please contact an administrator.');
+    if (error) {
+      console.error('Supabase admin check error:', error);
+      throw new Error('Database error while verifying admin access. Please verify database permissions.');
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: name || adminRecord.name },
-      },
-    });
+    if (!data) {
+      throw new Error('Access denied: Your email is not registered in the authorized core team admin list.');
+    }
 
-    if (error) throw error;
-    return data;
+    const profile = data as AdminUser;
+    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(profile));
+    setAdminProfile(profile);
+    setIsAdmin(true);
+    return profile;
   }, []);
+
+  const signIn = useCallback(async (emailInput: string) => {
+    return verifyAdminEmail(emailInput);
+  }, [verifyAdminEmail]);
 
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    setUser(null);
-    setIsAdmin(false);
+    localStorage.removeItem(ADMIN_STORAGE_KEY);
     setAdminProfile(null);
-    if (error) throw error;
+    setIsAdmin(false);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore errors from supabase auth signout
+    }
   }, []);
 
-  return { user, isAdmin, adminProfile, loading, signIn, signUp, signOut };
+  const user: AdminAuthUser | null = adminProfile
+    ? {
+        id: adminProfile.id,
+        email: adminProfile.email,
+        name: adminProfile.name,
+        role: adminProfile.role,
+      }
+    : null;
+
+  return {
+    user,
+    isAdmin,
+    adminProfile,
+    loading,
+    verifyAdminEmail,
+    signIn,
+    signOut,
+  };
 }
+

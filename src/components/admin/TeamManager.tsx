@@ -173,8 +173,12 @@ const TeamManager = () => {
 
       {/* Add/Edit Form */}
       <ContentForm
+        key={editingMember ? `edit-${editingMember.id}` : 'new-member'}
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={(isOpen) => {
+          setFormOpen(isOpen);
+          if (!isOpen) setEditingMember(null);
+        }}
         title={editingMember ? 'Edit Team Member' : 'Add Team Member'}
         fields={fields}
         initialValues={

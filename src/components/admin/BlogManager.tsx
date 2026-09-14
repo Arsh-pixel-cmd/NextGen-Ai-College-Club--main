@@ -164,8 +164,12 @@ const BlogManager = () => {
       </div>
 
       <ContentForm
+        key={editingPost ? `edit-${editingPost.id}` : 'new-post'}
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={(isOpen) => {
+          setFormOpen(isOpen);
+          if (!isOpen) setEditingPost(null);
+        }}
         title={editingPost ? 'Edit Blog Post' : 'Add Blog Post'}
         fields={fields}
         initialValues={

@@ -155,8 +155,12 @@ const EventManager = () => {
       </div>
 
       <ContentForm
+        key={editingEvent ? `edit-${editingEvent.id}` : 'new-event'}
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={(isOpen) => {
+          setFormOpen(isOpen);
+          if (!isOpen) setEditingEvent(null);
+        }}
         title={editingEvent ? 'Edit Event' : 'Add Event'}
         fields={fields}
         initialValues={

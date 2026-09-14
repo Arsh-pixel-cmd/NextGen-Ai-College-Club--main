@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { Shield } from 'lucide-react';
 
 interface MenuOverlayProps {
   isOpen: boolean;
@@ -7,7 +6,7 @@ interface MenuOverlayProps {
   onAdminClick?: () => void;
 }
 
-const MenuOverlay = ({ isOpen, onClose, onAdminClick }: MenuOverlayProps) => {
+const MenuOverlay = ({ isOpen, onClose, onAdminClick: _onAdminClick }: MenuOverlayProps) => {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,21 +82,6 @@ const MenuOverlay = ({ isOpen, onClose, onAdminClick }: MenuOverlayProps) => {
               Contact
             </a>
           </li>
-          {onAdminClick && (
-            <li className="pt-4">
-              <button
-                type="button"
-                className="text-base md:text-lg font-bold uppercase tracking-widest text-gray-400 hover:text-[#39FF14] transition-colors flex items-center gap-2 mx-auto px-4 py-2 rounded-full border border-gray-700 hover:border-[#39FF14]/50 bg-black/40 backdrop-blur-sm cursor-pointer"
-                onClick={() => {
-                  onClose();
-                  onAdminClick();
-                }}
-              >
-                <Shield className="w-4 h-4 text-[#39FF14]" />
-                <span>Admin Login</span>
-              </button>
-            </li>
-          )}
         </ul>
       </nav>
       

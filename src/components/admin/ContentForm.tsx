@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -38,13 +38,27 @@ const ContentForm = ({
   onSubmit,
   loading = false,
 }: ContentFormProps) => {
-  const [values, setValues] = useState<Record<string, string | number>>(() => {
+  const getInitialState = () => {
     const defaults: Record<string, string | number> = {};
     fields.forEach((f) => {
-      defaults[f.name] = initialValues[f.name] ?? (f.type === 'number' ? 0 : '');
+      const val = initialValues[f.name];
+      if (val !== undefined && val !== null) {
+        defaults[f.name] = f.type === 'number' ? Number(val) : String(val);
+      } else {
+        defaults[f.name] = f.type === 'number' ? 0 : '';
+      }
     });
     return defaults;
-  });
+  };
+
+  const [values, setValues] = useState<Record<string, string | number>>(getInitialState);
+
+  // Synchronize values whenever modal opens or initialValues update
+  useEffect(() => {
+    if (open) {
+      setValues(getInitialState());
+    }
+  }, [open, initialValues]);
 
   const handleChange = (name: string, value: string | number) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -55,20 +69,8 @@ const ContentForm = ({
     await onSubmit(values);
   };
 
-  // Reset values when initialValues change (opening for edit vs. add)
-  const handleOpenChange = (open: boolean) => {
-    if (open) {
-      const defaults: Record<string, string | number> = {};
-      fields.forEach((f) => {
-        defaults[f.name] = initialValues[f.name] ?? (f.type === 'number' ? 0 : '');
-      });
-      setValues(defaults);
-    }
-    onOpenChange(open);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-[#1C1C1C] border-gray-700 text-white max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white">{title}</DialogTitle>

@@ -48,32 +48,44 @@ export function useDynamicSectionMutations() {
         .from('dynamic_sections')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) {
+        throw new Error('Dynamic section could not be updated. Please verify Supabase RLS permissions.');
+      }
+      return data[0];
     },
     onSuccess: invalidate,
   });
 
   const deleteSection = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('dynamic_sections')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('Dynamic section could not be deleted. Please verify Supabase RLS permissions.');
+      }
+      return data;
     },
     onSuccess: invalidate,
   });
 
   const toggleVisibility = useMutation({
     mutationFn: async ({ id, is_visible }: { id: string; is_visible: boolean }) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('dynamic_sections')
         .update({ is_visible })
-        .eq('id', id);
+        .eq('id', id)
+        .select();
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('Failed to toggle visibility. Please verify Supabase RLS permissions.');
+      }
+      return data[0];
     },
     onSuccess: invalidate,
   });

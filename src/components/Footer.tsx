@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Github, Lock } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Github } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -184,26 +184,6 @@ export default function Footer({ onAdminClick }: FooterProps) {
                 whileHover={{ scale: 1.05 }}
               > NextGenXAi-Developer Team </motion.span> 
             </p>
-            <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-600">
-              {onAdminClick ? (
-                <button
-                  type="button"
-                  onClick={onAdminClick}
-                  className="hover:text-[#39FF14] text-gray-500 transition-colors inline-flex items-center gap-1.5 cursor-pointer py-1 px-2 rounded hover:bg-white/5"
-                >
-                  <Lock className="w-3 h-3 text-[#39FF14]" />
-                  <span>Admin Portal</span>
-                </button>
-              ) : (
-                <a
-                  href="/admin"
-                  className="hover:text-[#39FF14] text-gray-500 transition-colors inline-flex items-center gap-1.5 cursor-pointer py-1 px-2 rounded hover:bg-white/5"
-                >
-                  <Lock className="w-3 h-3 text-[#39FF14]" />
-                  <span>Admin Portal</span>
-                </a>
-              )}
-            </div>
           </motion.div>
         </div>
       </motion.footer>

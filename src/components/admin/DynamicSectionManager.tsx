@@ -208,7 +208,7 @@ const DynamicSectionManager = () => {
       </div>
 
       {/* Add/Edit Form Dialog */}
-      <Dialog open={formOpen} onOpenChange={(open) => { if (!open) resetForm(); setFormOpen(open); }}>
+      <Dialog open={formOpen} onOpenChange={(open) => { if (!open) { resetForm(); setEditingSection(null); } setFormOpen(open); }}>
         <DialogContent className="bg-[#1C1C1C] border-gray-700 text-white max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white">

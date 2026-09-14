@@ -1,5 +1,5 @@
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { LogOut } from 'lucide-react';
+import { LogOut, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AdminHeaderProps {
@@ -36,10 +36,21 @@ const AdminHeader = ({ activeSection }: AdminHeaderProps) => {
           {user?.email}
         </span>
         <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className="text-gray-400 hover:text-white hover:bg-gray-800 gap-1.5 text-xs"
+        >
+          <a href="/" target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">View Site</span>
+          </a>
+        </Button>
+        <Button
           variant="ghost"
           size="sm"
           onClick={signOut}
-          className="text-gray-400 hover:text-white hover:bg-gray-800 gap-2"
+          className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 gap-2 text-xs"
         >
           <LogOut className="w-4 h-4" />
           <span className="hidden md:inline">Logout</span>

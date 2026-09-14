@@ -40,10 +40,12 @@ export function useEventMutations() {
         .from('events')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) {
+        throw new Error('Event could not be updated. Please verify Supabase RLS permissions.');
+      }
+      return data[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
@@ -52,11 +54,16 @@ export function useEventMutations() {
 
   const deleteEvent = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('events')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('Event could not be deleted. Please verify Supabase RLS permissions.');
+      }
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
