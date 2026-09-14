@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useEvents, useEventMutations } from '@/hooks/useEvents';
+import { sortEventsChronologically } from '@/lib/dateUtils';
 import type { Event } from '@/types/content';
 import ContentForm, { type FormField } from './ContentForm';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import { toast } from 'sonner';
 
 const fields: FormField[] = [
   { name: 'name', label: 'Event Name', type: 'text', placeholder: 'AI Hackathon', required: true },
-  { name: 'date', label: 'Date', type: 'text', placeholder: 'Oct 26', required: true },
+  { name: 'date', label: 'Date', type: 'text', placeholder: 'Oct 26, 2026', required: true },
   { name: 'venue', label: 'Venue', type: 'text', placeholder: 'Room 404, Tech Hall' },
   { name: 'details', label: 'Details', type: 'textarea', placeholder: 'Event description...' },
   { name: 'display_order', label: 'Display Order', type: 'number', placeholder: '1', required: true },
@@ -29,6 +30,18 @@ const EventManager = () => {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Event | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Compute next order sequentially based on existing events
+  const nextDisplayOrder = useMemo(() => {
+    if (!events || events.length === 0) return 1;
+    return Math.max(...events.map((e) => Number(e.display_order) || 0)) + 1;
+  }, [events]);
+
+  // Sort events chronologically in ascending order
+  const sortedEvents = useMemo(() => {
+    if (!events) return [];
+    return sortEventsChronologically(events);
+  }, [events]);
 
   const handleAdd = () => {
     setEditingEvent(null);
@@ -48,7 +61,7 @@ const EventManager = () => {
         date: String(values.date),
         venue: String(values.venue),
         details: String(values.details),
-        display_order: Number(values.display_order),
+        display_order: Number(values.display_order) || nextDisplayOrder,
       };
       if (editingEvent) {
         await updateEvent.mutateAsync({ id: editingEvent.id, ...payload });
@@ -115,7 +128,7 @@ const EventManager = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/50">
-              {events?.map((event) => (
+              {sortedEvents?.map((event) => (
                 <tr key={event.id} className="hover:bg-gray-800/30 transition-colors">
                   <td className="px-4 py-3">
                     <div>
@@ -142,7 +155,7 @@ const EventManager = () => {
                   </td>
                 </tr>
               ))}
-              {(!events || events.length === 0) && (
+              {(!sortedEvents || sortedEvents.length === 0) && (
                 <tr>
                   <td colSpan={4} className="px-4 py-12 text-center text-gray-500 text-sm">
                     No events yet. Click "Add Event" to get started.
@@ -172,7 +185,9 @@ const EventManager = () => {
                 details: editingEvent.details,
                 display_order: editingEvent.display_order,
               }
-            : undefined
+            : {
+                display_order: nextDisplayOrder,
+              }
         }
         onSubmit={handleSubmit}
         loading={saving}

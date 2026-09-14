@@ -3,9 +3,10 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import { Check, Calendar } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { isPast, parse } from 'date-fns';
+import { isPast } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useEvents } from '@/hooks/useEvents';
+import { parseEventDate, sortEventsChronologically } from '@/lib/dateUtils';
 import type { Event as EventType } from '@/types/content';
 
 interface EventWithStatus extends EventType {
@@ -133,22 +134,31 @@ const HorizontalStepper = ({ eventsWithStatus }: { eventsWithStatus: EventWithSt
     }, [firstUpcomingIndex, eventsWithStatus.length]);
 
 
+  // Adapt container width to event count so small lists (e.g. 2 events) don't overstretch
+  const containerMaxWidth = eventsWithStatus.length <= 2
+    ? 'max-w-md'
+    : eventsWithStatus.length === 3
+    ? 'max-w-2xl'
+    : 'max-w-4xl';
+
   return (
-    <div className="w-full max-w-4xl text-center px-4 mx-auto">
+    <div className={`w-full ${containerMaxWidth} text-center px-4 mx-auto transition-all duration-300`}>
         <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter title-hover-neon-green mb-20">
           Upcoming Events
         </h2>
         <div className="relative w-full">
-          <div className="absolute top-5 left-0 w-full h-1 bg-gray-700 -translate-y-1/2 rounded-full">
-            <motion.div 
-              className="h-full bg-neon-green rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progressWidth}%` }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-            />
-          </div>
+          {eventsWithStatus.length > 1 && (
+            <div className="absolute top-5 left-5 right-5 h-1 bg-gray-700 -translate-y-1/2 rounded-full">
+              <motion.div 
+                className="h-full bg-neon-green rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progressWidth}%` }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+              />
+            </div>
+          )}
 
-          <div className="flex justify-between relative">
+          <div className={`flex ${eventsWithStatus.length === 1 ? 'justify-center' : 'justify-between'} relative`}>
             {eventsWithStatus.map((event, index) => (
                <Popover key={event.id}>
                 <PopoverTrigger asChild>
@@ -157,7 +167,7 @@ const HorizontalStepper = ({ eventsWithStatus }: { eventsWithStatus: EventWithSt
                     onClick={() => setActiveStep(index)}
                   >
                     <motion.div
-                      className="w-10 h-10 rounded-full border-2 bg-dark-bg flex items-center justify-center relative"
+                      className="w-10 h-10 rounded-full border-2 bg-dark-bg flex items-center justify-center relative flex-shrink-0"
                       animate={{ 
                         borderColor: activeStep >= index ? 'hsl(var(--neon-green))' : '#4a5568',
                         scale: activeStep === index ? 1.2 : 1
@@ -179,7 +189,7 @@ const HorizontalStepper = ({ eventsWithStatus }: { eventsWithStatus: EventWithSt
                        )}
                     </motion.div>
                     <div className="mt-4 text-center">
-                      <p className="text-sm font-bold text-gray-400 group-hover:text-white transition-colors">{event.date}</p>
+                      <p className="text-sm font-bold text-gray-400 group-hover:text-white transition-colors whitespace-nowrap">{event.date}</p>
                     </div>
                   </div>
                 </PopoverTrigger>
@@ -209,22 +219,16 @@ const EventsSection = () => {
     const isMobile = useIsMobile();
     const { data: events, isLoading } = useEvents();
     
+    // Sort events in ascending chronological order based on date
     const eventsWithStatus: EventWithStatus[] = useMemo(() => {
         if (!events) return [];
-        const currentYear = new Date().getFullYear();
-        return events.map(event => {
-          try {
-            const eventDate = parse(`${event.date} ${currentYear}`, 'MMM dd yyyy', new Date());
-            return {
-              ...event,
-              isCompleted: isPast(eventDate),
-            };
-          } catch {
-            return {
-              ...event,
-              isCompleted: false,
-            };
-          }
+        const sorted = sortEventsChronologically(events);
+        return sorted.map(event => {
+          const eventDate = parseEventDate(event.date);
+          return {
+            ...event,
+            isCompleted: eventDate.getTime() > 0 ? isPast(eventDate) : false,
+          };
         });
       }, [events]);
 

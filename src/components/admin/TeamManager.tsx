@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTeamMembers, useTeamMemberMutations } from '@/hooks/useTeamMembers';
 import type { TeamMember } from '@/types/content';
 import ContentForm, { type FormField } from './ContentForm';
@@ -16,7 +16,15 @@ import { toast } from 'sonner';
 const fields: FormField[] = [
   { name: 'name', label: 'Name', type: 'text', placeholder: 'John Doe', required: true },
   { name: 'position', label: 'Position', type: 'text', placeholder: 'President', required: true },
-  { name: 'image_url', label: 'Image URL', type: 'url', placeholder: 'https://example.com/photo.jpg', required: true },
+  {
+    name: 'image_url',
+    label: 'Member Photo',
+    type: 'image',
+    placeholder: 'https://example.com/photo.jpg',
+    required: true,
+    bucket: 'team-images',
+    maxSizeMB: 1, // Restrict file size to 1MB to conserve Supabase storage
+  },
   { name: 'display_order', label: 'Display Order', type: 'number', placeholder: '1', required: true },
 ];
 
@@ -28,6 +36,11 @@ const TeamManager = () => {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<TeamMember | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const nextDisplayOrder = useMemo(() => {
+    if (!members || members.length === 0) return 1;
+    return Math.max(...members.map((m) => Number(m.display_order) || 0)) + 1;
+  }, [members]);
 
   const handleAdd = () => {
     setEditingMember(null);
@@ -189,7 +202,9 @@ const TeamManager = () => {
                 image_url: editingMember.image_url,
                 display_order: editingMember.display_order,
               }
-            : undefined
+            : {
+                display_order: nextDisplayOrder,
+              }
         }
         onSubmit={handleSubmit}
         loading={saving}

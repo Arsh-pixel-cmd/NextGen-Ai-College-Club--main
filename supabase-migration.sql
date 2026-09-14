@@ -16,22 +16,17 @@ CREATE TABLE IF NOT EXISTS public.admin_users (
 
 ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Authenticated read for admin_users" ON public.admin_users;
-DROP POLICY IF EXISTS "Public read access for admin_users" ON public.admin_users;
-CREATE POLICY "Public read access for admin_users"
-  ON public.admin_users FOR SELECT
-  USING (true);
-
 DROP POLICY IF EXISTS "Admin modify for admin_users" ON public.admin_users;
-CREATE POLICY "Admin modify for admin_users"
+DROP POLICY IF EXISTS "Authenticated read for admin_users" ON public.admin_users;
+DROP POLICY IF EXISTS "admin_users_select_auth" ON public.admin_users;
+DROP POLICY IF EXISTS "Public read access for admin_users" ON public.admin_users;
+DROP POLICY IF EXISTS "Allow all access for admin_users" ON public.admin_users;
+
+CREATE POLICY "Allow all access for admin_users"
   ON public.admin_users FOR ALL
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.admin_users
-      WHERE LOWER(email) = LOWER(auth.jwt() ->> 'email')
-    )
-  );
+  TO public
+  USING (true)
+  WITH CHECK (true);
 
 -- Helper function: Checks if the currently authenticated user is in admin_users
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -216,3 +211,46 @@ INSERT INTO public.events (date, name, venue, details, display_order) VALUES
   ('Nov 28', 'Guest Lecture: AI Ethics', 'Auditorium', 'A talk from a leading industry expert on the ethical implications of modern AI.', 3),
   ('Dec 15', 'Project Showcase & Mixer', 'Main Atrium', 'Members showcase their semester projects, followed by a festive mixer.', 4)
 ON CONFLICT DO NOTHING;
+
+
+-- ============================================================
+-- 8. STORAGE BUCKET FOR TEAM & CONTENT IMAGES
+-- File size restricted to 2MB to conserve Supabase free tier storage
+-- ============================================================
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'team-images',
+  'team-images',
+  true,
+  2097152, -- 2 MB limit (in bytes)
+  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 2097152,
+  allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+DROP POLICY IF EXISTS "Public read for team-images" ON storage.objects;
+CREATE POLICY "Public read for team-images"
+  ON storage.objects FOR SELECT
+  TO public
+  USING (bucket_id = 'team-images');
+
+DROP POLICY IF EXISTS "Public upload for team-images" ON storage.objects;
+CREATE POLICY "Public upload for team-images"
+  ON storage.objects FOR INSERT
+  TO public
+  WITH CHECK (bucket_id = 'team-images');
+
+DROP POLICY IF EXISTS "Public update for team-images" ON storage.objects;
+CREATE POLICY "Public update for team-images"
+  ON storage.objects FOR UPDATE
+  TO public
+  USING (bucket_id = 'team-images');
+
+DROP POLICY IF EXISTS "Public delete for team-images" ON storage.objects;
+CREATE POLICY "Public delete for team-images"
+  ON storage.objects FOR DELETE
+  TO public
+  USING (bucket_id = 'team-images');
+

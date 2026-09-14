@@ -10,13 +10,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { ImageUpload } from './ImageUpload';
 
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'textarea' | 'url';
+  type: 'text' | 'number' | 'textarea' | 'url' | 'image';
   placeholder?: string;
   required?: boolean;
+  bucket?: string;
+  maxSizeMB?: number;
 }
 
 interface ContentFormProps {
@@ -38,14 +41,17 @@ const ContentForm = ({
   onSubmit,
   loading = false,
 }: ContentFormProps) => {
+  // Stable serialized key to prevent re-renders while typing from triggering useEffect
+  const initialValuesKey = JSON.stringify(initialValues ?? {});
+
   const getInitialState = () => {
     const defaults: Record<string, string | number> = {};
     fields.forEach((f) => {
-      const val = initialValues[f.name];
+      const val = initialValues?.[f.name];
       if (val !== undefined && val !== null) {
         defaults[f.name] = f.type === 'number' ? Number(val) : String(val);
       } else {
-        defaults[f.name] = f.type === 'number' ? 0 : '';
+        defaults[f.name] = f.type === 'number' ? (f.placeholder && !isNaN(Number(f.placeholder)) ? Number(f.placeholder) : 1) : '';
       }
     });
     return defaults;
@@ -53,12 +59,12 @@ const ContentForm = ({
 
   const [values, setValues] = useState<Record<string, string | number>>(getInitialState);
 
-  // Synchronize values whenever modal opens or initialValues update
+  // Synchronize values only when modal opens or initial values actually change
   useEffect(() => {
     if (open) {
       setValues(getInitialState());
     }
-  }, [open, initialValues]);
+  }, [open, initialValuesKey]);
 
   const handleChange = (name: string, value: string | number) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -66,7 +72,16 @@ const ContentForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(values);
+    const formatted: Record<string, string | number> = {};
+    fields.forEach((f) => {
+      const val = values[f.name];
+      if (f.type === 'number') {
+        formatted[f.name] = val === '' || val === undefined ? 0 : Number(val);
+      } else {
+        formatted[f.name] = val !== undefined ? String(val) : '';
+      }
+    });
+    await onSubmit(formatted);
   };
 
   return (
@@ -91,17 +106,20 @@ const ContentForm = ({
                   rows={3}
                   className="bg-[#141414] border-gray-700 text-white placeholder:text-gray-600 focus:border-[#39FF14] resize-none"
                 />
+              ) : field.type === 'image' ? (
+                <ImageUpload
+                  value={String(values[field.name] ?? '')}
+                  onChange={(url) => handleChange(field.name, url)}
+                  bucket={field.bucket || 'team-images'}
+                  maxSizeMB={field.maxSizeMB || 1}
+                  placeholder={field.placeholder}
+                />
               ) : (
                 <Input
                   id={`form-${field.name}`}
-                  type={field.type === 'number' ? 'number' : 'text'}
-                  value={field.type === 'number' ? Number(values[field.name] ?? 0) : String(values[field.name] ?? '')}
-                  onChange={(e) =>
-                    handleChange(
-                      field.name,
-                      field.type === 'number' ? Number(e.target.value) : e.target.value
-                    )
-                  }
+                  type={field.type === 'number' ? 'number' : field.type === 'url' ? 'url' : 'text'}
+                  value={values[field.name] ?? ''}
+                  onChange={(e) => handleChange(field.name, e.target.value)}
                   placeholder={field.placeholder}
                   required={field.required}
                   className="bg-[#141414] border-gray-700 text-white placeholder:text-gray-600 focus:border-[#39FF14]"

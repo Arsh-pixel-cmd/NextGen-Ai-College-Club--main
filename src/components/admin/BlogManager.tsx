@@ -20,7 +20,14 @@ const fields: FormField[] = [
   { name: 'source_url', label: 'Source URL', type: 'text', placeholder: 'aitoday.com' },
   { name: 'date', label: 'Date', type: 'text', placeholder: 'Nov 5, 2025' },
   { name: 'snippet', label: 'Snippet', type: 'textarea', placeholder: 'Brief description...' },
-  { name: 'image_url', label: 'Image URL', type: 'url', placeholder: 'https://example.com/image.jpg' },
+  {
+    name: 'image_url',
+    label: 'Cover Image',
+    type: 'image',
+    placeholder: 'https://example.com/image.jpg',
+    bucket: 'team-images',
+    maxSizeMB: 1,
+  },
   { name: 'category', label: 'Category', type: 'text', placeholder: 'Insights' },
   { name: 'read_time', label: 'Read Time', type: 'text', placeholder: '5 min read' },
 ];
