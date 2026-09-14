@@ -20,6 +20,7 @@ export interface FormField {
   required?: boolean;
   bucket?: string;
   maxSizeMB?: number;
+  rows?: number;
 }
 
 interface ContentFormProps {
@@ -103,7 +104,7 @@ const ContentForm = ({
                   onChange={(e) => handleChange(field.name, e.target.value)}
                   placeholder={field.placeholder}
                   required={field.required}
-                  rows={3}
+                  rows={field.rows || 3}
                   className="bg-[#141414] border-gray-700 text-white placeholder:text-gray-600 focus:border-[#39FF14] resize-none"
                 />
               ) : field.type === 'image' ? (

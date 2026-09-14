@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS public.blog_posts (
   source_url TEXT NOT NULL DEFAULT '',
   date TEXT NOT NULL DEFAULT '',
   snippet TEXT NOT NULL DEFAULT '',
+  content TEXT NOT NULL DEFAULT '',
   image_url TEXT NOT NULL DEFAULT '',
   category TEXT NOT NULL DEFAULT '',
   read_time TEXT NOT NULL DEFAULT '',

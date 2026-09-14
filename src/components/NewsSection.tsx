@@ -1,5 +1,5 @@
 'use client';
-import * as React from "react";
+import { useState } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -15,9 +15,11 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Newspaper } from "lucide-react";
+import { Newspaper, BookOpen, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useBlogPosts } from '@/hooks/useBlogPosts';
+import { BlogDetailModal } from './BlogDetailModal';
+import type { BlogPost } from '@/types/content';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -54,6 +56,13 @@ const LoadingSkeleton = () => (
 
 const NewsSection = () => {
   const { data: posts, isLoading } = useBlogPosts();
+  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleOpenPost = (post: BlogPost) => {
+    setSelectedPost(post);
+    setModalOpen(true);
+  };
 
   return (
     <section 
@@ -65,7 +74,7 @@ const NewsSection = () => {
           <AccordionItem value="item-1" className="border-b-0">
             <AccordionTrigger className="hover:no-underline">
               <div className="flex items-center gap-3">
-                <Newspaper className="w-6 h-6" />
+                <Newspaper className="w-6 h-6 text-[#39FF14]" />
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
                   Latest Blogs
                 </h2>
@@ -96,31 +105,50 @@ const NewsSection = () => {
                           whileInView="visible"
                           viewport={{ once: true, amount: 0.3 }}
                         >
-                          <Card className="bg-[#1C1C1C] border-gray-800 text-white rounded-lg overflow-hidden h-full flex flex-col">
+                          <Card
+                            onClick={() => handleOpenPost(item)}
+                            className="bg-[#1C1C1C] border-gray-800 hover:border-[#39FF14]/50 hover:bg-[#202020] text-white rounded-xl overflow-hidden h-full flex flex-col cursor-pointer transition-all duration-300 group shadow-lg hover:shadow-[#39FF14]/5"
+                          >
                             <CardContent className="flex flex-col md:flex-row gap-6 p-6 flex-grow">
                               <div className="flex-1 flex flex-col">
                                 <div className="flex items-center gap-3 mb-2">
-                                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold flex-shrink-0">
-                                    {item.source.substring(0, 2)}
+                                  <div className="w-8 h-8 rounded-full bg-gray-700/80 border border-gray-600 flex items-center justify-center text-xs font-bold text-[#39FF14] flex-shrink-0">
+                                    {item.source ? item.source.substring(0, 2).toUpperCase() : 'AI'}
                                   </div>
                                   <span className="text-sm text-gray-400">{item.source} &middot; {item.date}</span>
                                 </div>
-                                <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                                <p className="text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
+                                <h3 className="text-xl font-bold mb-2 text-white group-hover:text-[#39FF14] transition-colors leading-snug">
+                                  {item.title}
+                                </h3>
+                                <p className="text-gray-400 text-sm leading-relaxed mb-4 flex-grow line-clamp-3">
                                   {item.snippet}
                                 </p>
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mt-auto">
-                                  <Badge variant="secondary" className="bg-purple-600/20 text-purple-300 border-0">{item.source_url}</Badge>
-                                  <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-0">{item.category}</Badge>
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-3">
+                                  <Badge variant="secondary" className="bg-[#39FF14]/10 text-[#39FF14] border-0 text-[11px] font-medium">
+                                    {item.category || 'Article'}
+                                  </Badge>
+                                  {item.source_url && (
+                                    <Badge variant="secondary" className="bg-gray-800 text-gray-300 border-0 text-[11px]">
+                                      {item.source_url}
+                                    </Badge>
+                                  )}
                                   <span>{item.read_time}</span>
                                 </div>
+
+                                <div className="flex items-center justify-between pt-3 mt-auto border-t border-gray-800/80">
+                                  <span className="text-xs font-semibold text-[#39FF14] flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                                    Read full story <ArrowRight className="w-3.5 h-3.5" />
+                                  </span>
+                                  <span className="text-[11px] text-gray-500">Click to expand</span>
+                                </div>
                               </div>
+
                               {item.image_url && (
-                                <div className="w-full md:w-32 h-40 md:h-auto flex-shrink-0">
+                                <div className="w-full md:w-36 h-44 md:h-auto flex-shrink-0 overflow-hidden rounded-lg bg-gray-800">
                                   <img 
                                     src={item.image_url}
                                     alt={item.title} 
-                                    className="w-full h-full object-cover rounded-md"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                   />
                                 </div>
                               )}
@@ -140,6 +168,13 @@ const NewsSection = () => {
           </AccordionItem>
         </Accordion>
       </div>
+
+      {/* Reader Modal */}
+      <BlogDetailModal
+        post={selectedPost}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </section>
   );
 };

@@ -14,6 +14,7 @@ export interface BlogPost {
   source_url: string;
   date: string;
   snippet: string;
+  content?: string;
   image_url: string;
   category: string;
   read_time: string;
